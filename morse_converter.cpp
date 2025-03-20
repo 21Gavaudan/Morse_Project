@@ -62,7 +62,7 @@ std::string MorseConverter::encode(const std::string &text) const {
     return morse_code; // Placeholder return statement
 }
 
-// Fonction decode
+// Fonction decode naive
 std::string MorseConverter::decode(const std::string &morse) const {
     std::string decoded_text;
     std::string raw_current_letter;
@@ -109,3 +109,10 @@ std::string MorseConverter::decode(const std::string &morse) const {
 
     return decoded_text;
 }
+
+//Fonction decode with graph
+
+// std::string MorseConverter::decode_graph(const std::string &morse) const {
+//     std::string decoded_text;
+//     return decoded_text;
+// }

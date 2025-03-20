@@ -10,4 +10,5 @@ class MorseConverter {
         MorseConverter() = default;
         std::string encode(const std::string &text) const;
         std::string decode(const std::string &morse) const;
+        std::string decode_graph(const std::string &morse) const;
 };
