@@ -5,13 +5,18 @@
 
 Message::Message(const std::string &text) : text(text) {}
 
-Message Message::fromFile(const std::string &filename) {
-
+Message Message::fromFile(const std::string &filename) { //create message from a .txt file
     std::ifstream file(filename);
     std::stringstream buffer;
-
+    
     if (file.is_open()) {
-        buffer << file.rdbuf();
+        std::string line;
+        bool first_line = true; //to avoid adding a space before the first line
+        while (std::getline(file, line)) {
+            if (!first_line) buffer << " ";     //add a space between lines
+            buffer << line;
+            first_line = false;
+        }
         file.close();
         return Message(buffer.str());
     } else {
