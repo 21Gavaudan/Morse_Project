@@ -5,8 +5,8 @@
 
 int main(){
     std::cout << "===== Testing fromFile =====" << std::endl;
-    Message msg2 = Message::fromFile("text_files/helloworld.txt");
-    msg2.print();
+    Message msg_helloworld = Message::fromFile("text_files/helloworld.txt");
+    msg_helloworld.print();
 
     std::cout << "===== Testing save =====" << std::endl;
     Message msg3 = Message("Save Test");
@@ -23,17 +23,15 @@ int main(){
     std::cout << "Decoded: " << text_decoded << std::endl;
 
     std::cout << "===== Testing reading and saving morse messages =====" << std::endl;
-    Message msg4 = Message::fromFile("text_files/helloworld.txt");
-    msg4.print();
-    std::string morse2 = mc.encode(msg4.get_text());
-    Message morse_message = Message(morse2);
+    Message morse_message = Message(morse);
     morse_message.save("text_files/helloworld_morse.txt");
-    Message msg5 = Message::fromFile("text_files/helloworld_morse.txt");
-    msg5.print();
-    std::string text_decoded2 = mc.decode(morse2);
+    Message msg_morse_encoded = Message::fromFile("text_files/helloworld_morse.txt");
+    msg_morse_encoded.print();
+    std::string text_decoded2 = mc.decode(msg_morse_encoded.get_text());
     std::cout << "Decoded: " << text_decoded2 << std::endl;
 
     std::cout << "===== Testing audio wav =====" << std::endl;
     AudioWav aw;
+    aw.encodeToWav(morse, "audio_files/helloworld_morse.wav");
     return 0;
 }

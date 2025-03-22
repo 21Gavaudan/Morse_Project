@@ -55,7 +55,7 @@ std::vector<int16_t> AudioWav::readWav(const std::string &filename) const {
     return samples;
 }
 
-std::vector<int16_t> generateSamplesFromMorse(const std::string& morse, float dotDurationSec, double freq){
+std::vector<int16_t> AudioWav::generateSamplesFromMorse(const std::string& morse, float dotDurationSec, double freq) const {
     std::vector<int16_t> samples;
 
     int sampleRate = 44100;
@@ -93,6 +93,6 @@ std::vector<int16_t> generateSamplesFromMorse(const std::string& morse, float do
 }
 
 void AudioWav::encodeToWav(const std::string &morse, const std::string &filename) const {
-    std::vector<int16_t> samples = generateSamplesFromMorse(morse);
+    std::vector<int16_t> samples = generateSamplesFromMorse(morse, 0.1f, 750.0);
     writeWav(filename, samples);
 }
