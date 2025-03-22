@@ -35,7 +35,5 @@ int main(){
 
     std::cout << "===== Testing audio wav =====" << std::endl;
     AudioWav aw;
-    aw.generateEmptyWav("audio_files/empty.wav");
-
     return 0;
 }

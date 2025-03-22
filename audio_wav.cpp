@@ -6,49 +6,93 @@
 #include <sys/stat.h>
 #include <filesystem>
 
-void AudioWav::generateEmptyWav(const std::string &filename) const {
-    // Créer le dossier audio_files s'il n'existe pas
-    std::filesystem::create_directories("audio_files");
-    
-    std::cout << "Tentative de création du fichier WAV: " << filename << std::endl;
-    
+#define PI 3.14159265358979323846
+
+void AudioWav::writeWav(const std::string &filename, const std::vector<int16_t> &samples) const {
     std::ofstream file(filename, std::ios::binary);
+    if (!file) {
+        std::cerr << "Error: Unable to create WAV file!" << std::endl;
+        throw std::runtime_error("Unable to create WAV file: " + filename);
+    }
+
+    WavHeader header(samples.size());
+
+    file.write(reinterpret_cast<const char*>(&header), sizeof(header));  // Write header
+    if (!file) {
+        std::cerr << "Error: Failed to write WAV header!" << std::endl;
+        throw std::runtime_error("Failed to write WAV header to file: " + filename);
+    }
+
+    file.write(reinterpret_cast<const char*>(samples.data()), samples.size() * sizeof(int16_t));  // Write audio data
+    if (!file) {
+        std::cerr << "Error: Failed to write WAV data!" << std::endl;
+        throw std::runtime_error("Failed to write WAV data to file: " + filename);
+    }
+
+    file.close();
+    std::cout << "WAV file generated: " << filename << std::endl;
+}
+
+std::vector<int16_t> AudioWav::readWav(const std::string &filename) const {
+    std::ifstream file(filename, std::ios::binary);
     if (!file.is_open()) {
         std::cerr << "Erreur: Impossible d'ouvrir le fichier " << filename << std::endl;
         throw std::runtime_error("Could not open file " + filename);
     }
     
-    // Write the header
-    file.write("RIFF", 4);
-    uint32_t fileSize = 36;
-    file.write(reinterpret_cast<const char *>(&fileSize), 4);
-    file.write("WAVE", 4);
-    file.write("fmt ", 4);
-    uint32_t fmtSize = 16;
-    file.write(reinterpret_cast<const char *>(&fmtSize), 4);
-    uint16_t audioFormat = 1;
-    file.write(reinterpret_cast<const char *>(&audioFormat), 2);
-    uint16_t numChannels = 1;
-    file.write(reinterpret_cast<const char *>(&numChannels), 2);
-    uint32_t sampleRate = 44100;
-    file.write(reinterpret_cast<const char *>(&sampleRate), 4);
-    uint32_t byteRate = 44100 * 2;
-    file.write(reinterpret_cast<const char *>(&byteRate), 4);
-    uint16_t blockAlign = 2;
-    file.write(reinterpret_cast<const char *>(&blockAlign), 2);
-    uint16_t bitsPerSample = 16;
-    file.write(reinterpret_cast<const char *>(&bitsPerSample), 2);
-    file.write("data", 4);
-    uint32_t dataSize = 0;
-    file.write(reinterpret_cast<const char *>(&dataSize), 4);
+    // Skip the header
+    file.seekg(44);
+    
+    // Read the audio data
+    std::vector<int16_t> samples;
+    int16_t sample;
+    while(file.read(reinterpret_cast<char *>(&sample), sizeof(int16_t))) {
+        samples.push_back(sample);
+    }
     
     file.close();
     
-    // Vérifier que le fichier a bien été créé
-    std::ifstream check_file(filename);
-    if (check_file.good()) {
-        std::cout << "Fichier WAV créé avec succès: " << filename << std::endl;
-    } else {
-        std::cerr << "Erreur: Le fichier n'a pas été créé correctement" << std::endl;
+    return samples;
+}
+
+std::vector<int16_t> generateSamplesFromMorse(const std::string& morse, float dotDurationSec, double freq){
+    std::vector<int16_t> samples;
+
+    int sampleRate = 44100;
+    int dotDuration = sampleRate * dotDurationSec;
+    int dashDuration = 3 * dotDuration;
+    int silenceDuration = dotDuration;
+    int wordPause = 7 * dotDuration;
+
+    for (char c : morse){
+        int duration = 0;
+        if (c == '.'){
+            duration = dotDuration;
+        }
+        else if (c == '-'){
+            duration = dashDuration;
+        }
+        else if (c == ' '){ 
+            samples.insert(samples.end(), silenceDuration, 0); 
+            continue; 
+        }
+        else if (c == '/'){ 
+            samples.insert(samples.end(), wordPause, 0); 
+            continue; 
+        }
+        
+        for (int i = 0; i < duration; i++){
+            double time = static_cast<double>(i) / sampleRate;
+            int16_t sample = static_cast<int16_t>(30000 * sin(2.0 * PI * freq * time));
+            samples.push_back(sample);
+        }
+        samples.insert(samples.end(), silenceDuration, 0); // pause après chaque son
+
     }
+    return samples;
+}
+
+void AudioWav::encodeToWav(const std::string &morse, const std::string &filename) const {
+    std::vector<int16_t> samples = generateSamplesFromMorse(morse);
+    writeWav(filename, samples);
 }
