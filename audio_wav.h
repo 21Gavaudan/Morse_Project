@@ -30,12 +30,16 @@ class AudioWav {
     private:        
         std::vector<int16_t> readWav(const std::string &filename) const;
         void writeWav(const std::string &filename, const std::vector<int16_t> &samples) const;
-        std::vector<int16_t> generateSamplesFromMorse(const std::string& morse, float dotDurationSec = 0.1f, double freq = 750.0) const;
     public:
         //constructor
         AudioWav() = default;
 
         //Morse related functions
-        void encodeToWav(const std::string &morse, const std::string &filename) const;
+        void encodeToWav_sin(const std::string &morse, const std::string &filename) const;
+        void encodeToWav_pulse(const std::string &morse, const std::string &filename) const;
         std::string decodeFromWav(const std::string &filename) const;
+
+        std::vector<int16_t> generateSamplesFromMorse_sin(const std::string& morse, float dotDurationSec = 0.1f, double freq = 750.0) const;
+        std::vector<int16_t> generateSamplesFromMorse_pulse(const std::string& morse, float dotDurationSec = 0.1f, double freq = 750.0) const;
+
 };

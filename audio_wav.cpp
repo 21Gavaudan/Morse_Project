@@ -1,5 +1,3 @@
-
-
 #include "audio_wav.h"
 #include <fstream>
 #include <iostream>
@@ -51,11 +49,11 @@ std::vector<int16_t> AudioWav::readWav(const std::string &filename) const {
     }
     
     file.close();
-    
+        
     return samples;
 }
 
-std::vector<int16_t> AudioWav::generateSamplesFromMorse(const std::string& morse, float dotDurationSec, double freq) const {
+std::vector<int16_t> AudioWav::generateSamplesFromMorse_sin(const std::string& morse, float dotDurationSec, double freq) const {
     std::vector<int16_t> samples;
 
     int sampleRate = 44100;
@@ -92,7 +90,100 @@ std::vector<int16_t> AudioWav::generateSamplesFromMorse(const std::string& morse
     return samples;
 }
 
-void AudioWav::encodeToWav(const std::string &morse, const std::string &filename) const {
-    std::vector<int16_t> samples = generateSamplesFromMorse(morse, 0.1f, 750.0);
+std::vector<int16_t> AudioWav::generateSamplesFromMorse_pulse(const std::string& morse, float dotDurationSec, double freq) const {
+    std::vector<int16_t> samples;
+
+    int sampleRate = 44100;
+    int dotDuration = sampleRate * dotDurationSec;
+    int dashDuration = 3 * dotDuration;
+    int silenceDuration = dotDuration;
+    int wordPause = 7 * dotDuration;
+
+    for (char c : morse){
+        if (c == '.'){
+            samples.insert(samples.end(), dotDuration, 10000); 
+        }
+        else if (c == '-'){
+            samples.insert(samples.end(), dashDuration, 10000); 
+        }
+        else if (c == ' '){ 
+            samples.insert(samples.end(), silenceDuration, 0); 
+        }
+        else if (c == '/'){ 
+            samples.insert(samples.end(), wordPause, 0); 
+        }
+        
+        samples.insert(samples.end(), silenceDuration, 0); // pause après chaque son
+
+    }
+    return samples;
+}
+
+void AudioWav::encodeToWav_pulse(const std::string &morse, const std::string &filename) const {
+    std::vector<int16_t> samples = generateSamplesFromMorse_pulse(morse, 0.1f, 440.0);
     writeWav(filename, samples);
+}
+
+void AudioWav::encodeToWav_sin(const std::string &morse, const std::string &filename) const {
+    std::vector<int16_t> samples = generateSamplesFromMorse_sin(morse, 0.1f, 440.0);
+    writeWav(filename, samples);
+}
+
+std::string AudioWav::decodeFromWav(const std::string& filename) const {
+    std::vector<int16_t> samples = readWav(filename);
+
+
+    int sampleRate = 44100;
+    int dotLength = sampleRate / 10;  // 0.1 seconde
+    int dashLength = dotLength * 3;   // 0.3 seconde
+    int threshold = 1000;             // Ajusté pour mieux détecter le signal
+    
+    std::string morse;
+    int silenceCounter = 0;
+    int signalCounter = 0;
+    bool inSignal = false;
+    bool firstSignal = true;
+
+    for (size_t i = 0; i < samples.size(); ++i) {
+        if (std::abs(samples[i]) > threshold) {
+            if (!inSignal) {
+                if (!firstSignal && silenceCounter > dotLength * 2) {
+                    morse += " ";  // Espace entre lettres
+                }
+                silenceCounter = 0;
+                inSignal = true;
+            }
+            signalCounter++;
+        } else {
+            if (inSignal) {
+                // Déterminer si c'était un point ou un tiret
+                if (signalCounter > dashLength / 2) {
+                    morse += "-";
+                } else {
+                    morse += ".";
+                }
+                firstSignal = false;
+                signalCounter = 0;
+                inSignal = false;
+            }
+            silenceCounter++;
+            
+            // Détecter les espaces entre mots
+            if (silenceCounter > dotLength * 7) {
+                morse += " / ";
+                silenceCounter = 0;
+            }
+        }
+    }
+
+    // Traiter le dernier signal s'il y en a un
+    if (inSignal) {
+        if (signalCounter > dashLength / 2) {
+            morse += "-";
+        } else {
+            morse += ".";
+        }
+    }
+
+    return morse;
 }
