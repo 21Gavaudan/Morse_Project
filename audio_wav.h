@@ -18,7 +18,8 @@ struct WavHeader {
     uint32_t dataSize;                     // Size of audio data
 
     // Constructor to compute derived values
-    WavHeader(uint32_t numSamples) {
+    WavHeader(uint32_t numSamples, uint16_t sampleRate = 44100) {
+        this->sampleRate = sampleRate;
         dataSize = numSamples * sizeof(int16_t);  // Total size of audio data
         fileSize = 36 + dataSize;                // Total file size
         byteRate = sampleRate * numChannels * bitsPerSample / 8;
@@ -27,19 +28,30 @@ struct WavHeader {
 };
 
 class AudioWav {
-    private:        
+    public:
+        int amplitude = 30000;
+        int sampleRate = 44100;
+        float dotDurationSec = 0.1f;
+        double freq = 750.0;
+
         std::vector<int16_t> readWav(const std::string &filename) const;
         void writeWav(const std::string &filename, const std::vector<int16_t> &samples) const;
-    public:
+
         //constructor
         AudioWav() = default;
 
-        //Morse related functions
+        //Basics methods
+        void setAmplitude(int amplitude);
+        void setSampleRate(int sampleRate);
+        void setDotDurationSec(float dotDurationSec);
+        void setFreq(double freq);
+
+        //Morse related methods
         void encodeToWav_sin(const std::string &morse, const std::string &filename) const;
         void encodeToWav_pulse(const std::string &morse, const std::string &filename) const;
         std::string decodeFromWav(const std::string &filename) const;
 
-        std::vector<int16_t> generateSamplesFromMorse_sin(const std::string& morse, float dotDurationSec = 0.1f, double freq = 750.0) const;
-        std::vector<int16_t> generateSamplesFromMorse_pulse(const std::string& morse, float dotDurationSec = 0.1f, double freq = 750.0) const;
+        std::vector<int16_t> generateSamplesFromMorse_sin(const std::string& morse) const;
+        std::vector<int16_t> generateSamplesFromMorse_pulse(const std::string& morse) const;
 
 };
