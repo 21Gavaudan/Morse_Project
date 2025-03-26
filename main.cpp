@@ -21,18 +21,15 @@ int main(){
     Message message = Message::fromFile("data/text_files/long_text.txt");
     std::string morse = mc.encode(message.get_text());
 
-    audio.encodeToWav_pulse(morse, "data/audio_files/long_text_pulse.wav");
-    audio.encodeToWav_sin(morse, "data/audio_files/long_text_sin.wav");
+    //read wav
+    std::vector<int16_t> samples = audio.readWav("data/audio_files/long_text_pulse.wav");
+    std::cout << audio.sampleRateReading << std::endl;
 
-    std::string encoded_morse_from_audio = audio.decodeFromWav("data/audio_files/long_text_pulse.wav");
-    std::cout << "Decoded morse from audio: " << encoded_morse_from_audio << std::endl;
-
-    Message decoded_text = Message(mc.decode(encoded_morse_from_audio));
-    decoded_text.print();
-
-    //Gather data
-    std::vector<int16_t> samples = audio.generateSamplesFromMorse_pulse(morse);
-    saveSamplesToBinary("data/samples/long_text_pulse.bin", samples);
-
+    //test writing + read differents samplerate
+    audio.setSampleRateWriting(22050);
+    audio.writeWav("data/audio_files/long_text_pulse_22050.wav", samples);
+    std::vector<int16_t> samples2 = audio.readWav("data/audio_files/long_text_pulse_22050.wav");
+    std::cout << audio.sampleRateReading << std::endl;
+    
     return 0;
 }

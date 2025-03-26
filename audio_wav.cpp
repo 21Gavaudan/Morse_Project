@@ -16,7 +16,7 @@ void AudioWav::writeWav(const std::string &filename, const std::vector<int16_t> 
         throw std::runtime_error("Unable to create WAV file: " + filename);
     }
 
-    WavHeader header(samples.size(), sampleRate);
+    WavHeader header(samples.size(), sampleRateWriting);
 
     file.write(reinterpret_cast<const char*>(&header), sizeof(header));  // Write header
     if (!file) {
@@ -41,9 +41,15 @@ std::vector<int16_t> AudioWav::readWav(const std::string &filename) const {
         throw std::runtime_error("Could not open file " + filename);
     }
     
-    // Skip the header
-    file.seekg(44);
-    
+    char header[44];
+    file.read(header, 44);
+    if (file.gcount() < 44) {  // Check if 44 bytes were actually read
+        throw std::runtime_error("Erreur: Fichier trop petit pour être un WAV valide " + filename);
+    }
+    int sampleRate;
+    std::memcpy(&sampleRate, &header[24], sizeof(sampleRate));
+    this->sampleRateReading = sampleRate;
+
     // Read the audio data
     std::vector<int16_t> samples;
     int16_t sample;
@@ -64,8 +70,12 @@ void AudioWav::setAmplitude(int amplitude) {
     this->amplitude = amplitude;
 }
 
-void AudioWav::setSampleRate(int sampleRate) {
-    this->sampleRate = sampleRate;
+void AudioWav::setSampleRateWriting(int sampleRateWriting) {
+    this->sampleRateWriting = sampleRateWriting;
+}
+
+void AudioWav::setSampleRateReading(int sampleRateReading) {
+    this->sampleRateReading = sampleRateReading;
 }
 
 void AudioWav::setDotDurationSec(float dotDurationSec) {
@@ -81,7 +91,7 @@ void AudioWav::setFreq(double freq) {
 std::vector<int16_t> AudioWav::generateSamplesFromMorse_sin(const std::string& morse) const {
     std::vector<int16_t> samples;
 
-    int dotDuration = sampleRate * dotDurationSec;
+    int dotDuration = sampleRateWriting * dotDurationSec;
     int dashDuration = 3 * dotDuration;
     int silenceDuration = dotDuration;
     int wordPause = 7 * dotDuration;
@@ -106,7 +116,7 @@ std::vector<int16_t> AudioWav::generateSamplesFromMorse_sin(const std::string& m
         }
         
         for (int i = 0; i < duration; i++){
-            double time = static_cast<double>(i) / sampleRate;
+            double time = static_cast<double>(i) / sampleRateWriting;
             int16_t sample = static_cast<int16_t>(amplitude * sin(2.0 * PI * freq * time));
             samples.push_back(sample);
         }
@@ -119,7 +129,7 @@ std::vector<int16_t> AudioWav::generateSamplesFromMorse_sin(const std::string& m
 std::vector<int16_t> AudioWav::generateSamplesFromMorse_pulse(const std::string& morse) const {
     std::vector<int16_t> samples;
 
-    int dotDuration = sampleRate * dotDurationSec;
+    int dotDuration = sampleRateWriting * dotDurationSec;
     int dashDuration = 3 * dotDuration;
     int silenceDuration = dotDuration;
     int wordPause = 7 * dotDuration;
@@ -157,9 +167,7 @@ void AudioWav::encodeToWav_sin(const std::string &morse, const std::string &file
 std::string AudioWav::decodeFromWav(const std::string& filename) const {
     std::vector<int16_t> samples = readWav(filename);
 
-
-    int sampleRate = 44100;
-    int dotLength = sampleRate / 10;  // 0.1 seconde
+    int dotLength = sampleRateReading / 10;  // 0.1 seconde
     int dashLength = dotLength * 3;   // 0.3 seconde
     int threshold = 1000;             // Ajusté pour mieux détecter le signal
     

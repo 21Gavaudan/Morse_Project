@@ -30,7 +30,8 @@ struct WavHeader {
 class AudioWav {
     public:
         int amplitude = 30000;
-        int sampleRate = 44100;
+        int sampleRateWriting = 44100;
+        mutable int sampleRateReading;
         float dotDurationSec = 0.1f;
         double freq = 750.0;
 
@@ -42,7 +43,8 @@ class AudioWav {
 
         //Basics methods
         void setAmplitude(int amplitude);
-        void setSampleRate(int sampleRate);
+        void setSampleRateWriting(int sampleRateWriting);
+        void setSampleRateReading(int sampleRateReading);
         void setDotDurationSec(float dotDurationSec);
         void setFreq(double freq);
 
