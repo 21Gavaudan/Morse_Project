@@ -1,0 +1,2 @@
+Message pour le receveur: python est un meilleur langage que le c++
+Message pour l'enoyeur: sale fou ben oe !
