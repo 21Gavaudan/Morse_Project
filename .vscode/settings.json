@@ -63,6 +63,15 @@
         "compare": "cpp",
         "concepts": "cpp",
         "algorithm": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "fstream": "cpp",
+        "map": "cpp",
+        "__tree": "cpp",
+        "deque": "cpp",
+        "execution": "cpp",
+        "iomanip": "cpp",
+        "print": "cpp",
+        "queue": "cpp",
+        "stack": "cpp"
     }
 }

@@ -1,29 +1,31 @@
 # Variables
 CXX = g++
 CXXFLAGS = -Wall -std=c++17
-TARGET = main
+MYPROGRAM = myprogram
 
 # Source files
 SRCS = $(wildcard *.cpp)
 OBJS = $(SRCS:.cpp=.o)
 
-# Default rule to build and run the executable
-all: $(TARGET) run
+# Default rule to build the myprogram executable
+all: $(MYPROGRAM)
 
-# Link object files to create the executable
-$(TARGET): $(OBJS)
+# Rule to build only the myprogram executable
+myprogram: $(MYPROGRAM)
+
+# Link object files to create the myprogram executable
+$(MYPROGRAM): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # Compile source files to object files
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Rule to run the executable
-run: $(TARGET)
-	./$(TARGET)
-
 # Clean up build files
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS)
 
-.PHONY: all clean
+cleanall: clean
+	rm -f $(MYPROGRAM)
+
+.PHONY: all clean myprogram

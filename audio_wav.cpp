@@ -1,7 +1,6 @@
 #include "audio_wav.h"
 #include <fstream>
 #include <iostream>
-#include <sys/stat.h>
 #include <filesystem>
 
 #define PI 3.14159265358979323846
@@ -167,21 +166,35 @@ void AudioWav::encodeToWav_sin(const std::string &morse, const std::string &file
 std::string AudioWav::decodeFromWav(const std::string& filename) const {
     std::vector<int16_t> samples = readWav(filename);
 
-    int dotLength = sampleRateReading / 10;  // 0.1 seconde
-    int dashLength = dotLength * 3;   // 0.3 seconde
-    int threshold = 1000;             // Ajusté pour mieux détecter le signal
+    // Calculate important times
+    int dotSamples = static_cast<int>(sampleRateReading * dotDurationSec);
+    int letterPauseSamples = 3 * dotSamples;
+    int wordPauseSamples = 7 * dotSamples;
+
+    int threshold = 1000; // Energy threshold (adapt if necessary)
+    int windowSize = dotSamples / 10; // Small window size to detect changes (ex: 10% of a dot)
     
     std::string morse;
+
     int silenceCounter = 0;
     int signalCounter = 0;
     bool inSignal = false;
-    bool firstSignal = true;
 
-    for (size_t i = 0; i < samples.size(); ++i) {
-        if (std::abs(samples[i]) > threshold) {
+    for (size_t i = 0; i < samples.size(); i += windowSize) {
+        // Compute energy over a window
+        int64_t energy = 0;
+        for (int j = 0; j < windowSize && (i + j) < samples.size(); ++j) {
+            energy += samples[i + j] * samples[i + j];
+        }
+        energy /= windowSize;
+
+        if (energy > threshold * threshold) {
             if (!inSignal) {
-                if (!firstSignal && silenceCounter > dotLength * 2) {
-                    morse += " ";  // Espace entre lettres
+                // Transition silence -> signal
+                if (silenceCounter >= wordPauseSamples / windowSize) {
+                    morse += " / ";
+                } else if (silenceCounter >= letterPauseSamples / windowSize) {
+                    morse += " ";
                 }
                 silenceCounter = 0;
                 inSignal = true;
@@ -189,29 +202,22 @@ std::string AudioWav::decodeFromWav(const std::string& filename) const {
             signalCounter++;
         } else {
             if (inSignal) {
-                // Déterminer si c'était un point ou un tiret
-                if (signalCounter > dashLength / 2) {
+                // Transition signal -> silence
+                if (signalCounter >= (2 * dotSamples) / windowSize) {
                     morse += "-";
                 } else {
                     morse += ".";
                 }
-                firstSignal = false;
                 signalCounter = 0;
                 inSignal = false;
             }
             silenceCounter++;
-            
-            // Détecter les espaces entre mots
-            if (silenceCounter > dotLength * 7) {
-                morse += " / ";
-                silenceCounter = 0;
-            }
         }
     }
 
-    // Traiter le dernier signal s'il y en a un
+    // Final signal check
     if (inSignal) {
-        if (signalCounter > dashLength / 2) {
+        if (signalCounter >= (2 * dotSamples) / windowSize) {
             morse += "-";
         } else {
             morse += ".";
@@ -220,4 +226,3 @@ std::string AudioWav::decodeFromWav(const std::string& filename) const {
 
     return morse;
 }
-
